@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { WORKOUT_DAY_NAMES } from '@/lib/madcow';
 
-async function handler(request: NextRequest) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest) {
   const db = getDb();
 
   const exercises = db
@@ -19,5 +20,3 @@ async function handler(request: NextRequest) {
     dayNames: WORKOUT_DAY_NAMES,
   });
 }
-
-export const GET = requireAuth(handler);

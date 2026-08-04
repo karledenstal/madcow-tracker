@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 
-async function handler(request: NextRequest, { params }: { params: { exerciseId: string } }) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ exerciseId: string }> }) {
   const db = getDb();
-  const exerciseId = parseInt(params.exerciseId, 10);
+  const { exerciseId: exerciseIdParam } = await params;
+  const exerciseId = parseInt(exerciseIdParam, 10);
 
   if (isNaN(exerciseId)) {
     return NextResponse.json({ error: 'Invalid exercise ID' }, { status: 400 });
@@ -34,4 +36,4 @@ async function handler(request: NextRequest, { params }: { params: { exerciseId:
   return NextResponse.json({ history });
 }
 
-export const GET = requireAuth(handler);
+

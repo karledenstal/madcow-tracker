@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import type { Exercise } from '@/lib/db';
 
-async function handlePOST(request: NextRequest) {
+export const dynamic = 'force-dynamic';
+
+export async function POST(request: NextRequest) {
   const db = getDb();
   const body = await request.json();
   const { name, days } = body;
@@ -45,4 +46,4 @@ async function handlePOST(request: NextRequest) {
   }
 }
 
-export const POST = requireAuth(handlePOST);
+

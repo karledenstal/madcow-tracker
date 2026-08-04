@@ -226,7 +226,7 @@ export default function HistoryPage() {
                     <div>
                       <div className="font-semibold">{entry.weight} kg</div>
                       <div className="text-xs text-muted-foreground">
-                        {new Date(entry.date).toLocaleDateString()} • Cycle {entry.cycle}
+                        {entry.date} • Cycle {entry.cycle}
                         {entry.deload ? ' • Deload' : ''}
                       </div>
                     </div>

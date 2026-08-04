@@ -1,7 +1,5 @@
 'use client';
 
-import { getAuthToken } from '@/lib/auth';
-
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message);
@@ -10,44 +8,33 @@ export class ApiError extends Error {
 }
 
 async function fetchApi(url: string, options: RequestInit = {}) {
-  const token = getAuthToken();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+  try {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  if (response.status === 401) {
-    // Clear token and redirect to login
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new ApiError(response.status, error.error || 'Request failed');
     }
-    throw new ApiError(401, 'Unauthorized');
-  }
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new ApiError(response.status, error.error || 'Request failed');
+    return response.json();
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return response.json();
 }
 
 export const api = {
-  async getNext() {
-    return fetchApi('/api/next');
-  },
-
   async saveWorkout(data: {
     day: number;
     date: string;
@@ -83,13 +70,6 @@ export const api = {
   async deleteExercise(id: number) {
     return fetchApi(`/api/exercises/${id}`, {
       method: 'DELETE',
-    });
-  },
-
-  async login(token: string) {
-    return fetchApi('/api/auth', {
-      method: 'POST',
-      body: JSON.stringify({ token }),
     });
   },
 };

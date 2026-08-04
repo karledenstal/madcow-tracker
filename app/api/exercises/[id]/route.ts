@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 
-async function handleDELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export const dynamic = 'force-dynamic';
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const db = getDb();
-  const id = parseInt(params.id, 10);
+  const { id: idParam } = await params;
+  const id = parseInt(idParam, 10);
 
   if (isNaN(id)) {
     return NextResponse.json({ error: 'Invalid exercise ID' }, { status: 400 });
@@ -31,4 +33,4 @@ async function handleDELETE(request: NextRequest, { params }: { params: { id: st
   return NextResponse.json({ ok: true });
 }
 
-export const DELETE = requireAuth(handleDELETE);
+

@@ -87,26 +87,54 @@ export function getSuggestedWeight(
     return 20; // Default starting weight
   }
 
-  // For all other lifts, find the most recent non-deload weight for this exercise on Volume or Intensity days
-  // (Light day is only used for Squat/OHP/Deadlift which have their own progression)
-  const relevantDays = nextDay === WORKOUT_DAYS.LIGHT
-    ? [WORKOUT_DAYS.LIGHT] // For OHP/Deadlift on Light day
-    : [WORKOUT_DAYS.VOLUME, WORKOUT_DAYS.INTENSITY]; // For main lifts on Volume/Intensity
+  // OHP/Deadlift on Light day (B): last Light weight + 2.5
+  if (nextDay === WORKOUT_DAYS.LIGHT) {
+    const lastLift = history.find(
+      (h) => h.exercise_id === exercise.id && h.workout_day === WORKOUT_DAYS.LIGHT && h.deload === 0
+    );
+    let baseWeight = lastLift ? lastLift.weight : 20;
+    baseWeight += PROGRESSION_INCREMENT_KG;
+    if (isDeload) {
+      baseWeight = roundToNearest2_5(baseWeight * DELOAD_PERCENTAGE);
+    }
+    return roundToNearest2_5(baseWeight);
+  }
 
+  // Volume day (A): follow last Intensity (C) weight (no increment — the increment belongs to Intensity)
+  // Fallback: if no Intensity logged yet, use last Volume + 2.5
+  if (nextDay === WORKOUT_DAYS.VOLUME) {
+    const lastIntensity = history.find(
+      (h) => h.exercise_id === exercise.id && h.workout_day === WORKOUT_DAYS.INTENSITY && h.deload === 0
+    );
+    let baseWeight;
+    if (lastIntensity) {
+      // Volume follows last Intensity (Madcow: Monday = previous Friday)
+      baseWeight = lastIntensity.weight;
+    } else {
+      // No Intensity yet — fallback to last Volume + 2.5, or default
+      const lastVolume = history.find(
+        (h) => h.exercise_id === exercise.id && h.workout_day === WORKOUT_DAYS.VOLUME && h.deload === 0
+      );
+      baseWeight = (lastVolume ? lastVolume.weight : 20) + PROGRESSION_INCREMENT_KG;
+    }
+    if (isDeload) {
+      baseWeight = roundToNearest2_5(baseWeight * DELOAD_PERCENTAGE);
+    }
+    return roundToNearest2_5(baseWeight);
+  }
+
+  // Intensity day (C): last Volume or Intensity weight + 2.5 (this is where progression happens)
   const lastLift = history.find(
-    (h) => h.exercise_id === exercise.id && relevantDays.includes(h.workout_day) && h.deload === 0
+    (h) =>
+      h.exercise_id === exercise.id &&
+      (h.workout_day === WORKOUT_DAYS.VOLUME || h.workout_day === WORKOUT_DAYS.INTENSITY) &&
+      h.deload === 0
   );
-
-  let baseWeight = lastLift ? lastLift.weight : 20; // Default starting weight
-
-  // Add progression increment
+  let baseWeight = lastLift ? lastLift.weight : 20;
   baseWeight += PROGRESSION_INCREMENT_KG;
-
-  // Apply deload reduction if needed
   if (isDeload) {
     baseWeight = roundToNearest2_5(baseWeight * DELOAD_PERCENTAGE);
   }
-
   return roundToNearest2_5(baseWeight);
 }
 

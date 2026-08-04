@@ -149,6 +149,52 @@ describe('madcow progression logic', () => {
       const weight = getSuggestedWeight(benchExercise, WORKOUT_DAYS.VOLUME, 2, false, history);
       expect(weight).toBe(65); // 61.3 + 2.5 = 63.8, rounded to 65
     });
+
+    it('should suggest last Intensity weight for Volume day (Madcow: Monday = previous Friday)', () => {
+      const history: LiftHistory[] = [
+        {
+          exercise_id: 2,
+          workout_day: WORKOUT_DAYS.INTENSITY,
+          weight: 25,
+          date: '2026-01-05',
+          cycle: 1,
+          deload: 0,
+        },
+        {
+          exercise_id: 2,
+          workout_day: WORKOUT_DAYS.VOLUME,
+          weight: 22.5,
+          date: '2026-01-01',
+          cycle: 1,
+          deload: 0,
+        },
+      ];
+      const weight = getSuggestedWeight(benchExercise, WORKOUT_DAYS.VOLUME, 2, false, history);
+      expect(weight).toBe(25); // Volume follows last Intensity (no +2.5)
+    });
+
+    it('should add increment to last Intensity weight for Intensity day', () => {
+      const history: LiftHistory[] = [
+        {
+          exercise_id: 2,
+          workout_day: WORKOUT_DAYS.INTENSITY,
+          weight: 25,
+          date: '2026-01-05',
+          cycle: 1,
+          deload: 0,
+        },
+        {
+          exercise_id: 2,
+          workout_day: WORKOUT_DAYS.VOLUME,
+          weight: 22.5,
+          date: '2026-01-01',
+          cycle: 1,
+          deload: 0,
+        },
+      ];
+      const weight = getSuggestedWeight(benchExercise, WORKOUT_DAYS.INTENSITY, 2, false, history);
+      expect(weight).toBe(27.5); // Intensity adds +2.5 to last Intensity
+    });
   });
 
   describe('getSuggestedLifts', () => {

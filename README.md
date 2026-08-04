@@ -45,28 +45,21 @@ cd madcow-tracker
 
 # Install dependencies
 npm install
-
-# Set environment variables (optional)
-cp .env.example .env
-# Edit .env and set APP_TOKEN for authentication
 ```
 
-### Environment Variables
+### Environment Variables (Optional)
 
-Create a `.env` file:
+Create a `.env` file if you need custom settings:
 
 ```env
-# Optional: Set a token for API authentication
-# If not set, authentication is disabled (development only)
-APP_TOKEN=your-secret-token-here
-
-# Optional: Custom database path
-# Default: ./data/madcow.db
+# Database path (optional, defaults to ./data/madcow.db)
 DB_PATH=./data/madcow.db
 
-# Port (default: 3000)
+# Server port (optional, defaults to 3000)
 PORT=3000
 ```
+
+**Note:** This app has no authentication. It's designed for private networks (Tailscale, home LAN). Keep it on a trusted network only.
 
 ### Development
 
@@ -88,23 +81,42 @@ npm start
 
 The app will be available at `http://localhost:3000` (or your configured PORT).
 
-## Self-Hosting
+## Self-Hosting with Tailscale (Recommended)
 
-### Option 1: Direct Node.js
+Tailscale creates a secure private network between your devices. Your phone and server both join the Tailscale network, and you access the app via your private Tailscale hostname — no public exposure, no auth needed.
 
-```bash
-# Build
-npm run build
+### Setup
 
-# Set environment variables
-export APP_TOKEN="your-secret-token"
-export PORT=3000
+1. **Install Tailscale** on both your server and phone:
+   - Server: https://tailscale.com/download
+   - Phone: Install the Tailscale app from your app store
 
-# Start
-npm start
-```
+2. **Connect both devices:**
+   ```bash
+   # On server
+   sudo tailscale up
+   ```
+   Sign in with the same account on your phone.
 
-### Option 2: systemd Service
+3. **Build and run the app:**
+   ```bash
+   npm run build
+   PORT=3000 npm start
+   ```
+
+4. **Access from your phone:**
+   - Via MagicDNS: `http://<server-hostname>:3000`
+   - Via Tailscale IP: `http://100.x.y.z:3000`
+   
+   Find your server's hostname/IP with `tailscale status` on the server.
+
+5. **Optional - HTTPS on Tailnet:**
+   ```bash
+   tailscale serve https / http://127.0.0.1:3000
+   ```
+   Then access via `https://<server-hostname>`
+
+### systemd Service (Auto-start on boot)
 
 Create `/etc/systemd/system/madcow-tracker.service`:
 
@@ -115,12 +127,11 @@ After=network.target
 
 [Service]
 Type=simple
-User=www-data
-WorkingDirectory=/var/www/madcow-tracker
+User=youruser
+WorkingDirectory=/home/youruser/madcow-tracker
 Environment="NODE_ENV=production"
 Environment="PORT=3000"
-Environment="APP_TOKEN=your-secret-token-here"
-ExecStart=/usr/bin/node /var/www/madcow-tracker/.next/standalone/server.js
+ExecStart=/usr/bin/npm start
 Restart=always
 
 [Install]
@@ -132,40 +143,13 @@ Enable and start:
 ```bash
 sudo systemctl enable madcow-tracker
 sudo systemctl start madcow-tracker
-sudo systemctl status madcow-tracker
 ```
 
-### Option 3: Docker (Coming Soon)
+## Alternative: Local LAN Only
 
-A Dockerfile will be added in a future update.
+If you don't use Tailscale, you can run it on your home network. The app binds to all interfaces by default, so any device on your LAN can reach it at `http://<server-ip>:3000`.
 
-### Reverse Proxy (Recommended)
-
-Use nginx or Caddy to proxy to the app and add HTTPS:
-
-**nginx example:**
-
-```nginx
-server {
-    listen 80;
-    server_name workout.yourdomain.com;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
-Then add HTTPS with Let's Encrypt:
-
-```bash
-sudo certbot --nginx -d workout.yourdomain.com
-```
+**Security warning:** Without Tailscale or auth, anyone on your network can modify your workout data. Tailscale is recommended.
 
 ## Database
 
@@ -184,16 +168,14 @@ cp -r data data-backup-$(date +%Y%m%d)
 cp -r data-backup-20260804/madcow.db data/
 ```
 
-## Authentication
+## Security
 
-Set `APP_TOKEN` in your environment. The app requires this token for all API requests.
+**No authentication by design.** This app is meant for private networks only (Tailscale, home LAN). Anyone who can reach the server can use the app.
 
-On first visit, you'll be prompted to enter the token. It's stored in browser localStorage.
-
-**Security notes:**
-- Use a strong random token (e.g., `openssl rand -hex 32`)
-- Always use HTTPS in production
-- This is single-user auth; not suitable for multi-user deployments
+**Recommendations:**
+- Use Tailscale for secure private access
+- Never expose port 3000 to the public internet
+- Keep backups of your `data/` directory
 
 ## Development
 
@@ -212,16 +194,15 @@ madcow-tracker/
 ├── app/                    # Next.js app router pages
 │   ├── api/               # API routes
 │   ├── history/           # History page
-│   ├── log/               # Log workout page
 │   ├── exercises/         # Exercise management page
 │   ├── layout.tsx         # Root layout with bottom nav
-│   └── page.tsx           # Today/home page
+│   └── page.tsx           # Today/home page (interactive log)
 ├── components/            # React components
-│   └── ui/               # shadcn/ui components
+│   ├── ui/               # shadcn/ui components
+│   └── today-workout.tsx # Interactive workout log component
 ├── lib/                   # Core logic
 │   ├── db.ts             # Database schema & connection
 │   ├── madcow.ts         # Progression logic
-│   ├── auth.ts           # Authentication
 │   └── api/
 │       └── client.ts     # Client-side API wrapper
 ├── data/                  # SQLite database (gitignored)
