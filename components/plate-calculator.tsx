@@ -72,17 +72,17 @@ export function PlateCalculator({ defaultWeight, open, onClose }: PlateCalculato
         <div className="flex gap-2">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => setShowSettings(!showSettings)}
-            className="h-7 px-2 text-xs"
+            className="h-10 w-10 text-xl"
           >
             ⚙
           </Button>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={onClose}
-            className="h-7 px-2 text-xs"
+            className="h-10 w-10 text-xl"
           >
             ×
           </Button>
