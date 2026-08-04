@@ -96,7 +96,7 @@ export default function HistoryPage() {
                 key={exercise.id}
                 variant={selectedExercise === exercise.id ? 'default' : 'outline'}
                 onClick={() => setSelectedExercise(exercise.id)}
-                className="flex-1 min-w-[100px]"
+                className="flex-1 min-w-[100px] truncate"
               >
                 {exercise.name}
               </Button>

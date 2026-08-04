@@ -60,6 +60,7 @@ export interface LiftHistory {
 export interface SuggestedLift {
   exercise_id: number;
   exercise_name: string;
+  exercise_kind: 'madcow' | 'custom';
   suggested_weight: number;
   last_weight: number | null;
   last_date: string | null;
@@ -162,6 +163,7 @@ export function getSuggestedLifts(
     return {
       exercise_id: exercise.id,
       exercise_name: exercise.name,
+      exercise_kind: exercise.kind,
       suggested_weight,
       last_weight: lastLog?.weight ?? null,
       last_date: lastLog?.date ?? null,

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       ORDER BY date DESC, id DESC 
       LIMIT ?
     `)
-    .all(limit) as Workout[];
+    .all(limit) as unknown as Workout[];
 
   // Get lifts for each workout
   const workoutsWithLifts: WorkoutWithLifts[] = workouts.map((workout) => {
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Return the created workout with lifts
-  const workout = db.prepare('SELECT * FROM workouts WHERE id = ?').get(workoutId) as Workout;
+  const workout = db.prepare('SELECT * FROM workouts WHERE id = ?').get(workoutId) as unknown as Workout;
   const workoutLifts = db
     .prepare(`
       SELECT 

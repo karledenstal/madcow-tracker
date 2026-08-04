@@ -41,7 +41,7 @@ export default function TodayPage() {
       JOIN workouts w ON ll.workout_id = w.id
       ORDER BY w.date DESC, w.id DESC
     `)
-    .all() as LiftHistory[];
+    .all() as unknown as LiftHistory[];
 
   // Get suggested lifts
   const lifts = getSuggestedLifts(exercises, nextDay, nextCycle, isDeload, historyRows);

@@ -6,10 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api/client';
+import { RestTimer } from '@/components/rest-timer';
+import { getRecommendedRest } from '@/lib/rest';
+import { PlateCalculator } from '@/components/plate-calculator';
 
 interface Lift {
   exercise_id: number;
   exercise_name: string;
+  exercise_kind: 'madcow' | 'custom';
   suggested_weight: number;
   last_weight: number | null;
   last_date: string | null;
@@ -35,6 +39,18 @@ export function TodayWorkout({ day, dayName, cycle, isDeload, date, lifts }: Tod
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [restTimer, setRestTimer] = useState<{
+    open: boolean;
+    exerciseId: number;
+    exerciseName: string;
+    exerciseKind: 'madcow' | 'custom';
+    seconds: number;
+  } | null>(null);
+  const [plateCalc, setPlateCalc] = useState<{
+    open: boolean;
+    exerciseId: number;
+    weight: number;
+  } | null>(null);
 
   const handleWeightChange = (exerciseId: number, value: string) => {
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
@@ -56,6 +72,26 @@ export function TodayWorkout({ day, dayName, cycle, isDeload, date, lifts }: Tod
       ...prev,
       [exerciseId]: suggested.toString(),
     }));
+  };
+
+  const startRest = (lift: Lift) => {
+    const seconds = getRecommendedRest({ name: lift.exercise_name, kind: lift.exercise_kind });
+    setRestTimer({
+      open: true,
+      exerciseId: lift.exercise_id,
+      exerciseName: lift.exercise_name,
+      exerciseKind: lift.exercise_kind,
+      seconds,
+    });
+  };
+
+  const togglePlates = (exerciseId: number) => {
+    if (plateCalc?.exerciseId === exerciseId && plateCalc.open) {
+      setPlateCalc(null);
+    } else {
+      const weight = parseFloat(weights[exerciseId] || '0');
+      setPlateCalc({ open: true, exerciseId, weight });
+    }
   };
 
   const handleSave = async () => {
@@ -216,6 +252,35 @@ export function TodayWorkout({ day, dayName, cycle, isDeload, date, lifts }: Tod
                     +
                   </Button>
                 </div>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => startRest(lift)}
+                    className="flex-1"
+                    disabled={saving}
+                  >
+                    ⏱ Rest
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => togglePlates(lift.exercise_id)}
+                    className="flex-1"
+                    disabled={saving}
+                  >
+                    🏋️ Plates
+                  </Button>
+                </div>
+                {plateCalc?.exerciseId === lift.exercise_id && plateCalc.open && (
+                  <PlateCalculator
+                    defaultWeight={parseFloat(weights[lift.exercise_id] || '0')}
+                    open={plateCalc.open}
+                    onClose={() => setPlateCalc(null)}
+                  />
+                )}
               </div>
             );
           })}
@@ -230,6 +295,15 @@ export function TodayWorkout({ day, dayName, cycle, isDeload, date, lifts }: Tod
       >
         {saved ? '✓ Saved!' : saving ? 'Saving...' : 'Log Workout'}
       </Button>
+
+      {restTimer && (
+        <RestTimer
+          open={restTimer.open}
+          initialSeconds={restTimer.seconds}
+          exerciseName={restTimer.exerciseName}
+          onClose={() => setRestTimer(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,0 +1,18 @@
+services:
+  madcow-tracker:
+    build: .
+    image: madcow-tracker
+    container_name: madcow-tracker
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      DB_PATH: /app/data/madcow.db
+    volumes:
+      - ./data:/app/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/api/config"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
